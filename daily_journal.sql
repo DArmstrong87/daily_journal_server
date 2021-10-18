@@ -23,16 +23,11 @@ VALUES (
 SELECT *
 FROM Entries;
 
-SELECT
-    e.id,
-    e.concept,
-    e.entry,
-    e.mood_id,
-    e.date,
-    m.label
-FROM Entries e
+SELECT *, e.id, m.id mood_id
+FROM entries e
 JOIN Moods m
-    ON m.id = e.mood_id;
+ON e.mood_id = mood_id
+WHERE e.id = 2;
 
 SELECT *, e.id
 FROM Entries e

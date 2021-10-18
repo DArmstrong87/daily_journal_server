@@ -52,25 +52,27 @@ def get_single_entry(id):
         # Write the SQL query to get the information you want
         db_cursor.execute("""
         SELECT
-            a.id,
-            a.concept,
-            a.entry,
-            a.mood_id,
-            a.date,
-            a.mood
-        FROM entries a
-        JOIN Moods
-        ON mood_id = moods.id
-        WHERE a.id = ?
+            e.id,
+            e.concept,
+            e.entry,
+            e.mood_id emid,
+            e.date,
+            m.id mid,
+            m.label
+        FROM Entries e
+        JOIN Moods m
+            ON mid = e.mood_id
+        WHERE e.id = ?
         """, (id, ))
 
         # Convert rows of data into a Python list
         data = db_cursor.fetchone()
 
         entry = Entry(data['id'], data['concept'],
-                      data['entry'], data['mood_id'], data['date'])
+                      data['entry'], data['emid'], data['date'])
+        mood = Mood(data['mid'], data['label'])
+        entry.mood = mood.__dict__
 
-    # Use `json` package to properly serialize list as JSON
     return json.dumps(entry.__dict__)
 
 
