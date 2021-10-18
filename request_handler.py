@@ -2,7 +2,8 @@ import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from entries import get_all_entries, get_single_entry, delete_entry, get_entries_by_term, create_journal_entry, update_entry
 from moods import get_all_moods, get_single_mood, delete_mood
-
+from entry_tags import get_all_entry_tags
+from tags import get_tags
 
 # Here's a class. It inherits from another class.
 # For now, think of a class as a container for functions that
@@ -93,12 +94,18 @@ class HandleRequests(BaseHTTPRequestHandler):
                     response = f"{get_single_mood(id)}"
                 else:
                     response = f"{get_all_moods()}"
+            elif resource == "entrytags":
+                if id is not None:
+                    response = f"{get_single_mood(id)}"
+                else:
+                    response = f"{get_all_entry_tags()}"
+            elif resource == "tags":
+                response = f"{get_tags()}"
         elif len(parsed) == 3:
             ( resource, id, term ) = parsed
             if resource == 'entries':
                 response = get_entries_by_term(term)
         
-
         self.wfile.write(response.encode())
 
     # Here's a method on the class that overrides the parent's method.

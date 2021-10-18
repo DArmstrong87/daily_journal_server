@@ -30,7 +30,7 @@ def get_all_entries():
         for row in dataset:
 
             entry = Entry(row['id'], row['concept'],
-                          row['entry'], row['mood_id'], row['date'])
+                          row['entry'], row['mood_id'], row['date'], row['tags'])
 
             mood = Mood(row['mid'], row['label'])
 
@@ -57,6 +57,7 @@ def get_single_entry(id):
             e.entry,
             e.mood_id emid,
             e.date,
+            e.tags,
             m.id mid,
             m.label
         FROM Entries e
@@ -69,7 +70,7 @@ def get_single_entry(id):
         data = db_cursor.fetchone()
 
         entry = Entry(data['id'], data['concept'],
-                      data['entry'], data['emid'], data['date'])
+                      data['entry'], data['emid'], data['date'], data['tags'])
         mood = Mood(data['mid'], data['label'])
         entry.mood = mood.__dict__
 
@@ -94,13 +95,14 @@ def get_entries_by_term(term):
 
         db_cursor.execute("""
         SELECT
-            a.id,
-            a.concept,
-            a.entry,
-            a.mood_id,
-            a.date
-        FROM entries a
-        WHERE a.entry LIKE ?;
+            e.id,
+            e.concept,
+            e.entry,
+            e.mood_id,
+            e.date,
+            e.tags
+        FROM entries e
+        WHERE e.entry LIKE ?;
         """, (f"%{term}%", ))
 
         entries = []
@@ -108,7 +110,7 @@ def get_entries_by_term(term):
 
         for row in dataset:
             entry = Entry(row['id'], row['concept'],
-                          row['entry'], row['mood_id'], row['date'])
+                          row['entry'], row['mood_id'], row['date'], row['tags'])
 
             entries.append(entry.__dict__)
 
@@ -120,15 +122,25 @@ def create_journal_entry(new_entry):
         db_cursor = conn.cursor()
         db_cursor.execute("""
         INSERT INTO Entries
-            (concept, entry, mood_id, date)
-        VALUES (?,?,?,?)
+            (concept, entry, mood_id, date, tags)
+        VALUES (?,?,?,?,?)
         """,
                           (new_entry['concept'], new_entry['entry'],
-                           new_entry['mood_id'], new_entry['date'])
+                           new_entry['mood_id'], new_entry['date'], new_entry['tags'])
                           )
 
         id = db_cursor.lastrowid
         new_entry['id'] = id
+
+        tag_list=new_entry['tags'].split(",")
+        for tag in tag_list:
+            db_cursor.execute("""
+            INSERT INTO entry_tag
+                (entry_id, tag_id)
+            VALUES (?,?)
+            """,
+            (id, int(tag))
+            )
 
     return json.dumps(new_entry)
 
