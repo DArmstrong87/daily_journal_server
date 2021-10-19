@@ -1,6 +1,6 @@
 import sqlite3
 import json
-from models import Entry_Tag
+from models import EntryTag
 
 
 def get_all_entry_tags():
@@ -26,8 +26,7 @@ def get_all_entry_tags():
         # Iterate list of data returned from database
         for row in dataset:
 
-            entry = Entry_Tag(row['id'], row['entry_id'],
-                          row['tag_id'])
+            entry = EntryTag(row['id'], row['tags_id'])
             entry_tags.append(entry.__dict__)
 
     # Use `json` package to properly serialize list as JSON

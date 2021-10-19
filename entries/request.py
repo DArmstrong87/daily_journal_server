@@ -14,28 +14,49 @@ def get_all_entries():
 
         # Write the SQL query to get the information you want
         db_cursor.execute("""
-        SELECT *, e.id, m.id mid
+        SELECT
+            e.id,
+            e.concept,
+            e.entry,
+            e.mood_id,
+            e.date,
+            m.id,
+            m.label
         FROM Entries e
         JOIN Moods m
-            ON m.id = e.mood_id
+            ON e.mood_id = m.id
         """)
 
-        # Initialize an empty list to hold all entries representations
-        entries = []
-
-        # Convert rows of data into a Python list
         dataset = db_cursor.fetchall()
+        entries = []
 
         # Iterate list of data returned from database
         for row in dataset:
+            entry = {
+                'id': row['id'],
+                'concept': row['concept'],
+                'entry': row['entry'],
+                'mood_id': row['mood_id'],
+                'data': row['date'],
+                'tags': []
+            }
+            mood = Mood(row['id'], row['label'])
+            entry['mood'] = mood.__dict__
 
-            entry = Entry(row['id'], row['concept'],
-                          row['entry'], row['mood_id'], row['date'], row['tags'])
+            db_cursor.execute("""
+            SELECT t.id, t.name
+            from entries e
+            join entry_tag et on e.id = et.entry_id
+            join tag t on t.id = et.tag_id;
+            WHERE et.id = ?
+            """, (entry['id'],))
 
-            mood = Mood(row['mid'], row['label'])
+            tag_set = db_cursor.fetchall()
+            for tag_data in tag_set:
+                tag = {'id': tag_data['id'], 'name': tag_data['name']}
+                entry['tags'].append(tag)
 
-            entry.mood = mood.__dict__
-            entries.append(entry.__dict__)
+            entries.append(entry)
 
     # Use `json` package to properly serialize list as JSON
     return json.dumps(entries)
@@ -69,8 +90,12 @@ def get_single_entry(id):
         # Convert rows of data into a Python list
         data = db_cursor.fetchone()
 
-        entry = Entry(data['id'], data['concept'],
-                      data['entry'], data['emid'], data['date'], data['tags'])
+        entry = Entry(data['id'],
+                      data['concept'],
+                      data['entry'],
+                      data['emid'],
+                      data['date'],
+                      data['tags'])
         mood = Mood(data['mid'], data['label'])
         entry.mood = mood.__dict__
 
@@ -132,15 +157,15 @@ def create_journal_entry(new_entry):
         id = db_cursor.lastrowid
         new_entry['id'] = id
 
-        tag_list=new_entry['tags'].split(",")
+        tag_list = new_entry['tags'].split(",")
         for tag in tag_list:
             db_cursor.execute("""
             INSERT INTO entry_tag
                 (entry_id, tag_id)
             VALUES (?,?)
             """,
-            (id, int(tag))
-            )
+                              (id, int(tag))
+                              )
 
     return json.dumps(new_entry)
 
