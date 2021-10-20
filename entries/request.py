@@ -32,31 +32,30 @@ def get_all_entries():
 
         # Iterate list of data returned from database
         for row in dataset:
-            entry = {
-                'id': row['id'],
-                'concept': row['concept'],
-                'entry': row['entry'],
-                'mood_id': row['mood_id'],
-                'data': row['date'],
-                'tags': []
-            }
+            entry = Entry(row['id'],
+                          row['concept'],
+                          row['entry'],
+                          row['mood_id'],
+                          row['date'],
+                          []
+                          )
+            entries.append(entry.__dict__)
             mood = Mood(row['id'], row['label'])
-            entry['mood'] = mood.__dict__
+            entry.mood = mood.__dict__
 
             db_cursor.execute("""
             SELECT t.id, t.name
             from entries e
             join entry_tag et on e.id = et.entry_id
-            join tag t on t.id = et.tag_id;
-            WHERE et.id = ?
-            """, (entry['id'],))
+            join tag t on t.id = et.tag_id
+            WHERE et.entry_id = ?
+            """, (entry.id,))
 
             tag_set = db_cursor.fetchall()
+            print(tag_set)
             for tag_data in tag_set:
                 tag = {'id': tag_data['id'], 'name': tag_data['name']}
-                entry['tags'].append(tag)
-
-            entries.append(entry)
+                entry.tags.append(tag)
 
     # Use `json` package to properly serialize list as JSON
     return json.dumps(entries)
@@ -147,25 +146,25 @@ def create_journal_entry(new_entry):
         db_cursor = conn.cursor()
         db_cursor.execute("""
         INSERT INTO Entries
-            (concept, entry, mood_id, date, tags)
-        VALUES (?,?,?,?,?)
+            (concept, entry, mood_id, date)
+        VALUES (?,?,?,?)
         """,
-                          (new_entry['concept'], new_entry['entry'],
-                           new_entry['mood_id'], new_entry['date'], new_entry['tags'])
+                          (new_entry['concept'],
+                           new_entry['entry'],
+                           new_entry['mood_id'],
+                           new_entry['date']
+                           )
                           )
 
         id = db_cursor.lastrowid
         new_entry['id'] = id
 
-        tag_list = new_entry['tags'].split(",")
-        for tag in tag_list:
+        for tag in new_entry['tags']:
             db_cursor.execute("""
             INSERT INTO entry_tag
                 (entry_id, tag_id)
-            VALUES (?,?)
-            """,
-                              (id, int(tag))
-                              )
+                values (?, ?)
+            """, (id, tag))
 
     return json.dumps(new_entry)
 
@@ -181,3 +180,10 @@ def update_entry(id, new_entry):
             date = ?
         WHERE id = ?
         """, (new_entry['concept'], new_entry['entry'], new_entry['mood_id'], new_entry['date'], id))
+
+        was_updated = db_cursor.rowcount
+
+        if was_updated:
+            return True
+        else:
+            return False

@@ -1,8 +1,9 @@
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from entries import get_all_entries, get_single_entry, delete_entry, get_entries_by_term, create_journal_entry, update_entry
+from entry_tags.request import delete_entrytag
 from moods import get_all_moods, get_single_mood, delete_mood
-from entry_tags import get_all_entry_tags
+from entry_tags import get_all_entry_tags, create_entry_tag
 from tags import get_tags
 
 # Here's a class. It inherits from another class.
@@ -127,6 +128,9 @@ class HandleRequests(BaseHTTPRequestHandler):
 
         if resource == "entries":
             new_response = create_journal_entry(post_body)
+        elif resource == "entrytags":
+            new_response = create_entry_tag(post_body)
+
 
         self.wfile.write(f"{new_response}".encode())
         # Encode the new dict and send in response
@@ -144,7 +148,11 @@ class HandleRequests(BaseHTTPRequestHandler):
         (resource, id) = self.parse_url(self.path)
 
         if resource == "entries":
-            update_entry(id, post_body)
+            was_updated = update_entry(id, post_body)
+            if was_updated:
+                self._set_headers(204)
+            else:
+                self._set_headers(404)
 
         self.wfile.write("".encode())
 
@@ -158,6 +166,8 @@ class HandleRequests(BaseHTTPRequestHandler):
         # Delete a single animal from the list
         if resource == "entries":
             delete_entry(id)
+        if resource == "entrytags":
+            delete_entrytag(id)
 
         # Encode the new animal and send in response
         self.wfile.write("".encode())

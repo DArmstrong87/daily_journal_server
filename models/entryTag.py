@@ -1,5 +1,6 @@
 class EntryTag():
 
-    def __init__(self, id, tags_id=""):
+    def __init__(self, id, entry_id, tag_id):
         self.id = id
-        self.tags = tags_id
+        self.entry_id= entry_id
+        self.tag_id= tag_id
