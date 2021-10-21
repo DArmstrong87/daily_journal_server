@@ -154,7 +154,7 @@ class HandleRequests(BaseHTTPRequestHandler):
             else:
                 self._set_headers(404)
 
-        self.wfile.write("".encode())
+        # self.wfile.write("".encode())
 
     def do_DELETE(self):
         # Set a 204 response code
